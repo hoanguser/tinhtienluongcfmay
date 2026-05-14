@@ -355,7 +355,7 @@
 
                 <div class="summary-box" id="salarySummary"></div>
             </div>
-            <button style="background: #16a34a;" onclick="exportJPG()">Xuất ảnh JPG</button>
+            <button style="background: #16a34a;" onclick="exportJPG()">Tải về máy</button>
         </div>
     </div>
 
@@ -559,18 +559,49 @@
         function saveAll() { localStorage.setItem('allStaffsData', JSON.stringify(staffs)); }
 
         window.onload = renderTabs;
+function exportJPG() {
+    const element = document.querySelector('#resultArea .card');
+    
+    // Hiện thông báo đợi nếu bảng lương dài
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "Đang xử lý...";
+    btn.disabled = true;
 
-        function exportJPG() {
-            const element = document.querySelector('#resultArea .card');
-            html2canvas(element, { scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `${staffs[activeStaffIdx].name}-luong.jpg`;
-                link.href = canvas.toDataURL('image/jpeg', 1.0);
-                link.click();
-            });
-        }
+    html2canvas(element, { 
+        scale: 2, // Tăng chất lượng ảnh sắc nét
+        useCORS: true, 
+        backgroundColor: "#ffffff" 
+    }).then(canvas => {
+        // Tạo link tải về
+        const link = document.createElement('a');
+        const staffName = staffs[activeStaffIdx].name || 'nhan-vien';
+        const month = monthSelect.value;
+        
+        // Đặt tên file: TenNhanVien-Thang-Luong.png
+        link.download = `${staffName}-T${month}-luong.png`;
+        
+        // Chuyển canvas thành dữ liệu ảnh
+        link.href = canvas.toDataURL('image/png', 1.0);
+        
+        // Kích hoạt lệnh tải về
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Khôi phục nút bấm
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }).catch(err => {
+        console.error("Lỗi xuất ảnh:", err);
+        alert("Không thể lưu ảnh. Hãy thử chụp màn hình!");
+        btn.innerText = originalText;
+        btn.disabled = false;
+    });
+}
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script
+        src="[https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js](https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js)"></script>
 </body>
 
 </html>
