@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Lương Đa Nhân Viên</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #10b981;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        /* Tabs Styling */
+        .tabs-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            width: 100%;
+            scrollbar-width: none;
+        }
+
+        .tabs-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .add-tab-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .day-btn {
+            aspect-ratio: 1;
+            font-size: 12px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .day-btn.active {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+
+        #shiftModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            font-size: 12px;
+        }
+
+        th,
+        td {
+            border: 1px solid #eee;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        .summary-box {
+            background: #fef2f2;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: right;
+            border-left: 4px solid #ef4444;
+        }
+
+        .summary-item {
+            font-size: 14px;
+            margin: 3px 0;
+        }
+
+        .grand-total {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ef4444;
+            margin-top: 5px;
+        }
+
+        .summary-flex {
+            display: flex;
+            justify-content: space-between;
+            /* Đẩy 2 cột về 2 phía */
+            align-items: flex-start;
+            gap: 10px;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .summary-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .delete-staff {
+            color: #f87171;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        /* Container bao quanh lưới nhân viên */
+        #staffTabs {
+            display: grid;
+            /* CHÍNH: Chia đúng 3 cột, mỗi cột chiếm 1 phần bằng nhau (1fr) */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            /* Khoảng cách giữa các ô */
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .tab {
+            /* Không dùng width cố định, để grid tự chia */
+            padding: 10px 5px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            /* Chữ nhỏ lại một chút để vừa 3 cột */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            border: 2px solid transparent;
+            /* Tạo viền ẩn để khi active không bị giật khung */
+        }
+
+        /* Tên nhân viên */
+        .tab span:first-child {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Tên dài quá sẽ hiện dấu ... */
+            white-space: nowrap;
+            flex: 1;
+            margin-right: 3px;
+            text-align: center;
+        }
+
+        /* Nút xóa (dấu x) */
+        .delete-staff {
+            color: #f87171;
+            font-weight: bold;
+            padding: 0 4px;
+            font-size: 14px;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: #c7d2fe;
+            /* Thêm chút viền sáng cho tab đang chọn */
+        }
+
+        /* Nút dấu cộng nằm riêng một hàng bên dưới */
+        .add-tab-btn {
+            width: 97%;
+            height: 40px;
+            border-radius: 10px;
+            background: #10b981;
+            color: white;
+            border: none;
+            font-size: 20px;
+            margin-bottom: 15px;
+            margin: 10px;
+        }
+
+        .add-tab-btn {
+            color: #090909;
+            padding: 0.7em 1.7em;
+            font-size: 18px;
+            border-radius: 0.5em;
+            background: #e8e8e8;
+            cursor: pointer;
+            border: 1px solid #e8e8e8;
+            transition: all 0.3s;
+            box-shadow: 6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff;
+        }
+
+        .add-tab-btn:active {
+            color: #666;
+            box-shadow: inset 4px 4px 12px #c5c5c5, inset -4px -4px 12px #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Quản Lý Lương</h2>
+
+        <!-- Tabs Section -->
+        <div class="tabs-container">
+            <div id="staffTabs"></div>
+            <button class="add-tab-btn" onclick="addNewStaff()">+ Thêm mới</button>
+        </div>
+
+        <div class="card">
+            <label>Tên nhân viên:</label>
+            <input type="text" id="staffName" placeholder="Nhập tên..." oninput="updateStaffName()">
+
+            <div style="display:flex; gap: 10px;">
+                <div style="flex:1">
+                    <label>Tháng:</label>
+                    <select id="monthSelect" onchange="renderCalendar()"></select>
+                </div>
+                <div style="flex:1">
+                    <label>Năm:</label>
+                    <select id="yearSelect" onchange="renderCalendar()"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p style="margin:0; font-weight:bold;">Lịch làm việc:</p>
+            <div id="calendar" class="calendar-grid"></div>
+        </div>
+
+        <button onclick="calculateSalary()">TÍNH TIỀN & XUẤT BẢNG</button>
+
+        <div id="resultArea" style="display:none;">
+            <div class="card" style="overflow-x: auto; padding: 10px;">
+                <h3 id="printTitle" style="text-align:center; font-size: 16px; margin-bottom:10px;"></h3>
+                <table id="salaryTable">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Bắt đầu</th>
+                            <th>Kết thúc</th>
+                            <th>Tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+
+                <div class="summary-box" id="salarySummary"></div>
+            </div>
+            <button style="background: #16a34a;" onclick="exportJPG()">Xuất ảnh JPG</button>
+        </div>
+    </div>
+
+    <!-- Modal Shift -->
+    <div id="shiftModal">
+        <div class="modal-content">
+            <h3 id="modalDateTitle" style="margin-top:0">Ngày 01/01</h3>
+            <div id="shiftList"></div>
+            <button onclick="addShiftRow()" style="background: #10b981; margin-top:10px;">+ Thêm ca</button>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="closeModal()" style="background:#94a3b8;">Đóng</button>
+                <button onclick="saveShifts()">Lưu ca</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let staffs = JSON.parse(localStorage.getItem('allStaffsData')) || [{ id: Date.now(), name: 'Nhân viên 1', workData: {} }];
+        let activeStaffIdx = 0;
+
+        const monthSelect = document.getElementById('monthSelect');
+        const yearSelect = document.getElementById('yearSelect');
+        const now = new Date();
+
+        // Init Month/Year
+        for (let i = 1; i <= 12; i++) monthSelect.innerHTML += `<option value="${i}" ${i === now.getMonth() + 1 ? 'selected' : ''}>${i}</option>`;
+        for (let i = 2024; i <= 2026; i++) yearSelect.innerHTML += `<option value="${i}" ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`;
+
+        function renderTabs() {
+            const container = document.getElementById('staffTabs');
+            container.innerHTML = '';
+            staffs.forEach((staff, index) => {
+                const tab = document.createElement('div');
+                tab.className = `tab ${index === activeStaffIdx ? 'active' : ''}`;
+                tab.innerHTML = `
+                    <span onclick="switchStaff(${index})">${staff.name || 'N/A'}</span>
+                    <span class="delete-staff" onclick="deleteStaff(${index})">×</span>
+                `;
+                container.appendChild(tab);
+            });
+            document.getElementById('staffName').value = staffs[activeStaffIdx].name;
+            renderCalendar();
+        }
+
+        function addNewStaff() {
+            const newStaff = { id: Date.now(), name: 'Nhân viên mới', workData: {} };
+            staffs.push(newStaff);
+            activeStaffIdx = staffs.length - 1;
+            saveAll();
+            renderTabs();
+        }
+
+        function switchStaff(idx) {
+            activeStaffIdx = idx;
+            document.getElementById('resultArea').style.display = 'none';
+            renderTabs();
+        }
+
+        function deleteStaff(idx) {
+            if (staffs.length === 1) return alert("Phải có ít nhất một nhân viên!");
+            if (confirm(`Xóa nhân viên ${staffs[idx].name}?`)) {
+                staffs.splice(idx, 1);
+                activeStaffIdx = 0;
+                saveAll();
+                renderTabs();
+            }
+        }
+
+        function updateStaffName() {
+            staffs[activeStaffIdx].name = document.getElementById('staffName').value;
+            saveAll();
+            renderTabs();
+        }
+
+        function renderCalendar() {
+            const month = parseInt(monthSelect.value);
+            const year = parseInt(yearSelect.value);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const calendar = document.getElementById('calendar');
+            const workData = staffs[activeStaffIdx].workData;
+            calendar.innerHTML = '';
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${month}-${d}`;
+                const btn = document.createElement('div');
+                btn.className = `day-btn ${workData[dateStr] ? 'active' : ''}`;
+                btn.innerText = d;
+                btn.onclick = () => openModal(d, month, year);
+                calendar.appendChild(btn);
+            }
+        }
+
+        function openModal(d, m, y) {
+            currentDateStr = `${y}-${m}-${d}`;
+            document.getElementById('modalDateTitle').innerText = `Ngày ${d}/${m}/${y}`;
+            document.getElementById('shiftModal').style.display = 'flex';
+            const shiftList = document.getElementById('shiftList');
+            shiftList.innerHTML = '';
+            const existing = staffs[activeStaffIdx].workData[currentDateStr] || [];
+            if (existing.length === 0) addShiftRow();
+            else existing.forEach(s => addShiftRow(s.start, s.end));
+        }
+
+        function createTimeSelect(name, defaultValue) {
+            const [h, m] = defaultValue.split(':');
+            let hHtml = `<select class="${name}-h">`, mHtml = `<select class="${name}-m">`;
+            for (let i = 0; i < 24; i++) hHtml += `<option value="${i.toString().padStart(2, '0')}" ${h == i ? 'selected' : ''}>${i.toString().padStart(2, '0')}</option>`;
+            for (let i = 0; i < 60; i += 15) mHtml += `<option value="${i.toString().padStart(2, '0')}" ${m == i ? 'selected' : ''}>${i.toString().padStart(2, '0')}</option>`;
+            return `<div style="display:flex; gap:2px; align-items:center;">${hHtml += '</select>'}:${mHtml += '</select>'}</div>`;
+        }
+
+        function addShiftRow(start = "08:00", end = "12:00") {
+            const div = document.createElement('div');
+            div.className = 'shift-row';
+            div.style = 'display:flex; gap:5px; margin-bottom:5px;';
+            div.innerHTML = `${createTimeSelect('s', start)} ${createTimeSelect('e', end)} 
+            <button onclick="this.parentElement.remove()" style="width:40px; background:#f87171; padding:5px; border:none; border-radius:4px; color:white;">X</button>`;
+            document.getElementById('shiftList').appendChild(div);
+        }
+
+        function saveShifts() {
+            const rows = document.querySelectorAll('.shift-row');
+            const shifts = [];
+            rows.forEach(row => {
+                shifts.push({
+                    start: `${row.querySelector('.s-h').value}:${row.querySelector('.s-m').value}`,
+                    end: `${row.querySelector('.e-h').value}:${row.querySelector('.e-m').value}`
+                });
+            });
+            if (shifts.length > 0) staffs[activeStaffIdx].workData[currentDateStr] = shifts;
+            else delete staffs[activeStaffIdx].workData[currentDateStr];
+            saveAll();
+            renderCalendar();
+            closeModal();
+        }
+
+        function calculateSalary() {
+            const staff = staffs[activeStaffIdx];
+            if (!staff.name) return alert("Vui lòng nhập tên nhân viên!");
+            const month = monthSelect.value, year = yearSelect.value;
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            let total22k = 0, total18k = 0;
+            const sortedDates = Object.keys(staff.workData).filter(d => d.startsWith(`${year}-${month}-`)).sort((a, b) => new Date(a) - new Date(b));
+
+            if (sortedDates.length === 0) return alert("Chưa có dữ liệu làm việc!");
+
+            sortedDates.forEach(date => {
+                staff.workData[date].forEach(s => {
+                    const breakdown = getBreakdown(s.start, s.end);
+                    total22k += breakdown.h22;
+                    total18k += breakdown.h18;
+                    const dayTotal = (breakdown.h22 * 22000) + (breakdown.h18 * 18000);
+                    tableBody.innerHTML += `<tr><td>${date.split('-')[2]}/${month}</td><td>${s.start}</td><td>${s.end}</td><td>${dayTotal.toLocaleString()}đ</td></tr>`;
+                });
+            });
+
+            const totalHours = total22k + total18k;
+            const allowance = totalHours >= 90 ? 100000 : 0;
+            const grandTotal = (total22k * 22000) + (total18k * 18000) + allowance;
+
+            document.getElementById('printTitle').innerText = `BẢNG LƯƠNG: ${staff.name.toUpperCase()} (T${month}/${year})`;
+            document.getElementById('salarySummary').innerHTML = `
+            <div class="summary-flex">
+                <div class="summary-column">
+                    <div class="summary-item">Giờ 22k: <b>${total22k.toFixed(1)}h</b> = ${(total22k * 22000).toLocaleString()}đ</div>
+                    <div class="summary-item">Giờ 18k: <b>${total18k.toFixed(1)}h</b> = ${(total18k * 18000).toLocaleString()}đ</div>
+                </div>
+                <div class="summary-column" style="text-align: right;">
+                    <div class="summary-item">Tổng giờ: <b>${totalHours.toFixed(1)} Tiếng</b></div>
+                    ${allowance > 0 ? `<div class="summary-item" style="color:#16a34a">Phụ cấp xe: <b>100.000đ</b></div>` : ''}
+                </div>
+            </div>
+            <div class="grand-total">TỔNG CỘNG: ${grandTotal.toLocaleString()} VNĐ</div>
+            `;
+            document.getElementById('resultArea').style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function getBreakdown(startStr, endStr) {
+            let s = timeToMin(startStr), e = timeToMin(endStr);
+            let h22 = 0, h18 = 0;
+            const RANGES = [
+                { s: 360, e: 600, rate: '22k' },  // 6h-10h
+                { s: 600, e: 1080, rate: '18k' }, // 10h-18h
+                { s: 1080, e: 1320, rate: '22k' } // 18h-22h
+            ];
+            RANGES.forEach(r => {
+                let overlap = Math.min(e, r.e) - Math.max(s, r.s);
+                if (overlap > 0) {
+                    if (r.rate === '22k') h22 += overlap / 60;
+                    else h18 += overlap / 60;
+                }
+            });
+            return { h22, h18 };
+        }
+
+        function timeToMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+        function closeModal() { document.getElementById('shiftModal').style.display = 'none'; }
+        function saveAll() { localStorage.setItem('allStaffsData', JSON.stringify(staffs)); }
+
+        window.onload = renderTabs;
+
+        function exportJPG() {
+            const element = document.querySelector('#resultArea .card');
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${staffs[activeStaffIdx].name}-luong.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 1.0);
+                link.click();
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</body>
+
+</html>
